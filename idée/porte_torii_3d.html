@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Porte torii 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Plan : maquette sur fond « papier washi », accent vermillon de torii, encre sumi.
+     Mise en page : modèle 3D à gauche, légende des composants (avec les broches) à droite. */
+  :root {
+    --bg: #f3efe6;
+    --surface: #fbf9f4;
+    --ink: #1f1c19;
+    --muted: #6d655c;
+    --accent: #c43d27;
+    --line: #ddd5c7;
+    --stage: #e9e3d6;
+    --font-display: "Shippori Mincho", "Hiragino Mincho ProN", Georgia, serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161412;
+      --surface: #1f1c19;
+      --ink: #efe9df;
+      --muted: #a39a8e;
+      --accent: #e4593f;
+      --line: #36312b;
+      --stage: #23201c;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161412;
+    --surface: #1f1c19;
+    --ink: #efe9df;
+    --muted: #a39a8e;
+    --accent: #e4593f;
+    --line: #36312b;
+    --stage: #23201c;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.5 var(--font-body);
+  }
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 20px 16px 32px;
+    display: grid;
+    gap: 16px;
+  }
+  header { display: grid; gap: 4px; }
+  h1 {
+    font: 800 clamp(26px, 4vw, 36px)/1.1 var(--font-display);
+    margin: 0;
+    text-wrap: balance;
+  }
+  h1 span { color: var(--accent); }
+  header p { margin: 0; color: var(--muted); max-width: 70ch; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 16px;
+  }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .stage {
+    position: relative;
+    background: var(--stage);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    min-height: 420px;
+    height: min(72vh, 680px);
+  }
+  #scene { position: absolute; inset: 0; }
+  #scene canvas { display: block; }
+  .toolbar {
+    position: absolute;
+    left: 12px; right: 12px; bottom: 12px;
+    display: flex; flex-wrap: wrap; gap: 8px;
+    z-index: 2;
+  }
+  .toolbar button {
+    font: 600 14px/1 var(--font-body);
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .toolbar button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .toolbar button:focus-visible, .legend li:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .hint {
+    position: absolute; top: 10px; right: 12px; z-index: 2;
+    font-size: 12px; color: var(--muted);
+  }
+
+  .tag {
+    font: 600 12px/1 var(--font-body);
+    min-width: 22px; height: 22px; padding: 0 6px;
+    display: grid; place-items: center;
+    border-radius: 11px;
+    background: var(--ink); color: var(--bg);
+    border: 2px solid var(--stage);
+    transition: background .2s;
+    pointer-events: none;
+  }
+  .tag.on { background: var(--accent); color: #fff; }
+  .labels-off .tag { display: none; }
+
+  aside {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+    display: grid; gap: 16px; align-content: start;
+  }
+  aside h2 {
+    font: 600 18px/1.2 var(--font-display);
+    margin: 0;
+  }
+  .legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .legend li {
+    display: grid; grid-template-columns: 26px 1fr; gap: 10px;
+    padding: 7px 6px; border-radius: 6px; cursor: default;
+  }
+  .legend li:hover, .legend li.on { background: var(--stage); }
+  .legend .num {
+    width: 22px; height: 22px; border-radius: 11px;
+    display: grid; place-items: center;
+    font: 600 12px/1 var(--font-body);
+    background: var(--ink); color: var(--bg);
+  }
+  .legend li.on .num { background: var(--accent); color: #fff; }
+  .legend b { font-weight: 600; display: block; }
+  .legend small { color: var(--muted); font-size: 13px; }
+  .pin { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; }
+
+  .materials { display: grid; gap: 6px; font-size: 14px; }
+  .materials div { display: grid; grid-template-columns: 14px 1fr; gap: 8px; align-items: start; }
+  .swatch { width: 14px; height: 14px; border-radius: 3px; margin-top: 3px; border: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Porte intelligente <span>torii</span> + shoji</h1>
+    <p>Maquette d'environ 46 × 54 × 26 cm. Le Raspberry Pi et l'Arduino sont cachés dans le socle, donc la nappe de la caméra n'a qu'à descendre derrière le pilier gauche.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage" id="stage">
+      <div id="scene"></div>
+      <div class="hint">Glisser pour tourner · molette pour zoomer</div>
+      <div class="toolbar">
+        <button class="primary" id="btnPorte" type="button">Ouvrir la porte</button>
+        <button id="btnSocle" type="button">Socle opaque</button>
+        <button id="btnLabels" type="button">Masquer les numéros</button>
+      </div>
+    </div>
+
+    <aside>
+      <div>
+        <h2>Composants et broches</h2>
+      </div>
+      <ul class="legend" id="legend">
+        <li data-id="1" tabindex="0"><span class="num">1</span><span><b>Caméra Raspberry Pi</b><small>Au centre du linteau, à hauteur du visage · nappe CSI vers le Pi</small></span></li>
+        <li data-id="2" tabindex="0"><span class="num">2</span><span><b>Écran LCD 16×2 I2C</b><small>Dans la plaque du torii · <span class="pin">SDA A4, SCL A5</span></small></span></li>
+        <li data-id="3" tabindex="0"><span class="num">3</span><span><b>LED rouge / verte</b><small>Sur la traverse · <span class="pin">D10 / D11</span></small></span></li>
+        <li data-id="4" tabindex="0"><span class="num">4</span><span><b>Capteur PIR</b><small>Pilier gauche · <span class="pin">D3</span></small></span></li>
+        <li data-id="5" tabindex="0"><span class="num">5</span><span><b>Bouton poussoir</b><small>Pilier droit · <span class="pin">D2</span></small></span></li>
+        <li data-id="6" tabindex="0"><span class="num">6</span><span><b>Ultrason HC-SR04</b><small>Devant le socle · <span class="pin">TRIG D4, ECHO D5</span></small></span></li>
+        <li data-id="7" tabindex="0"><span class="num">7</span><span><b>Servomoteur SG90</b><small>Derrière la porte, en haut à gauche · <span class="pin">D9</span></small></span></li>
+        <li data-id="8" tabindex="0"><span class="num">8</span><span><b>Buzzer</b><small>Dans le socle · <span class="pin">D8</span></small></span></li>
+        <li data-id="9" tabindex="0"><span class="num">9</span><span><b>Raspberry Pi</b><small>Dans le socle · câble USB vers l'Arduino</small></span></li>
+        <li data-id="10" tabindex="0"><span class="num">10</span><span><b>Arduino Uno + mini breadboard</b><small>Dans le socle · fils regroupés dans une gaine derrière le pilier droit</small></span></li>
+      </ul>
+
+      <div>
+        <h2>Matériaux</h2>
+      </div>
+      <div class="materials">
+        <div><span class="swatch" style="background:#c43d27"></span><span>Torii : carton mousse 5 mm peint vermillon (aérosol)</span></div>
+        <div><span class="swatch" style="background:#2a2623"></span><span>Linteau, socle et cadre shoji : peinture noire mate</span></div>
+        <div><span class="swatch" style="background:#f2e9d6"></span><span>Porte shoji : baguettes en bois + papier calque, LED derrière pour l'effet lumineux</span></div>
+        <div><span class="swatch" style="background:#8a8f96"></span><span>Charnières de quincaillerie, ou brochette en bois comme axe</span></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
+<script>
+(function () {
+  const conteneur = document.getElementById("scene");
+  const scene = new THREE.Scene();
+
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 500);
+  camera.position.set(52, 46, 78);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  conteneur.appendChild(renderer.domElement);
+
+  const labelRenderer = new THREE.CSS2DRenderer();
+  labelRenderer.domElement.style.position = "absolute";
+  labelRenderer.domElement.style.inset = "0";
+  labelRenderer.domElement.style.pointerEvents = "none";
+  conteneur.appendChild(labelRenderer.domElement);
+
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 26, 0);
+  controls.enableDamping = true;
+  controls.minDistance = 35;
+  controls.maxDistance = 180;
+  controls.maxPolarAngle = Math.PI * 0.49;
+
+  // ---------- Lumières ----------
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7f70, 0.75));
+  const soleil = new THREE.DirectionalLight(0xffffff, 0.8);
+  soleil.position.set(40, 90, 60);
+  soleil.castShadow = true;
+  soleil.shadow.mapSize.set(2048, 2048);
+  Object.assign(soleil.shadow.camera, { left: -60, right: 60, top: 70, bottom: -20 });
+  scene.add(soleil);
+  // Lumière derrière le papier shoji
+  const lueur = new THREE.PointLight(0xffc98a, 0.9, 40);
+  lueur.position.set(0, 26, -6);
+  scene.add(lueur);
+
+  // Sol : uniquement l'ombre, pour aller avec le thème clair ou sombre
+  const sol = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.ShadowMaterial({ opacity: 0.18 }));
+  sol.rotation.x = -Math.PI / 2;
+  sol.receiveShadow = true;
+  scene.add(sol);
+
+  // ---------- Matériaux ----------
+  const mat = (color, extra) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.7, metalness: 0.05 }, extra || {}));
+  const VERMILLON = mat(0xc43d27, { roughness: 0.55 });
+  const NOIR = mat(0x2a2623, { roughness: 0.85 });
+  const BOIS = mat(0x3b2f26, { roughness: 0.8 });
+  const PAPIER = mat(0xf2e9d6, { roughness: 0.95, transparent: true, opacity: 0.9, emissive: 0xffd9a0, emissiveIntensity: 0.18, side: THREE.DoubleSide });
+  const PCB_VERT = mat(0x1f7a4a, { roughness: 0.6 });
+  const PCB_BLEU = mat(0x1b5f9e, { roughness: 0.6 });
+  const METAL = mat(0xb9bec4, { metalness: 0.7, roughness: 0.35 });
+  const BLANC = mat(0xf4f4f0, { roughness: 0.5 });
+
+  function boite(w, h, d, materiau, x, y, z, parent) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), materiau);
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    (parent || scene).add(m);
+    return m;
+  }
+  function cylindre(r, h, materiau, x, y, z, parent, segments) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, segments || 24), materiau);
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    (parent || scene).add(m);
+    return m;
+  }
+  function tube(points, rayon, couleur) {
+    const courbe = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(p[0], p[1], p[2])));
+    const m = new THREE.Mesh(new THREE.TubeGeometry(courbe, 80, rayon, 8, false), mat(couleur, { roughness: 0.6 }));
+    m.castShadow = true;
+    scene.add(m);
+    return m;
+  }
+
+  // ---------- Étiquettes numérotées ----------
+  const tags = {};
+  function etiquette(id, x, y, z) {
+    const div = document.createElement("div");
+    div.className = "tag";
+    div.textContent = id;
+    const obj = new THREE.CSS2DObject(div);
+    obj.position.set(x, y, z);
+    scene.add(obj);
+    (tags[id] = tags[id] || []).push(div);
+  }
+
+  // ---------- Socle (Pi + Arduino cachés dedans) ----------
+  const SOCLE_TRANSPARENT = mat(0x2a2623, { transparent: true, opacity: 0.28, roughness: 0.9, depthWrite: false });
+  const socle = boite(46, 8, 26, SOCLE_TRANSPARENT, 0, 4, 0);
+  socle.castShadow = false;
+  const contourSocle = new THREE.LineSegments(new THREE.EdgesGeometry(socle.geometry), new THREE.LineBasicMaterial({ color: 0x2a2623 }));
+  socle.add(contourSocle);
+
+  // ---------- Torii ----------
+  // Piliers
+  cylindre(1.6, 42, VERMILLON, -15.5, 29, 0);
+  cylindre(1.6, 42, VERMILLON, 15.5, 29, 0);
+  // Pieds noirs
+  cylindre(1.9, 2, NOIR, -15.5, 9, 0);
+  cylindre(1.9, 2, NOIR, 15.5, 9, 0);
+  // Kasagi (linteau du haut, noir, bouts relevés)
+  boite(34, 2.4, 4.4, NOIR, 0, 52.4, 0);
+  const boutG = boite(8, 2.4, 4.4, NOIR, -20.6, 52.9, 0);
+  boutG.rotation.z = -0.13;
+  const boutD = boite(8, 2.4, 4.4, NOIR, 20.6, 52.9, 0);
+  boutD.rotation.z = 0.13;
+  // Shimaki (sous le kasagi)
+  boite(40, 1.8, 3.6, VERMILLON, 0, 50.3, 0);
+  // Nuki (traverse)
+  boite(38, 2.2, 2.6, VERMILLON, 0, 45, 0);
+  // Gakuzuka (plaque centrale) qui porte l'écran LCD
+  boite(11, 4.2, 1.6, NOIR, 0, 47.6, 0);
+
+  // ---------- Écran LCD (texte dessiné sur un canvas) ----------
+  const lcdCanvas = document.createElement("canvas");
+  lcdCanvas.width = 512; lcdCanvas.height = 160;
+  const lcdCtx = lcdCanvas.getContext("2d");
+  const lcdTexture = new THREE.CanvasTexture(lcdCanvas);
+  function ecrireLCD(l1, l2) {
+    lcdCtx.fillStyle = "#3d7bd6";
+    lcdCtx.fillRect(0, 0, 512, 160);
+    lcdCtx.fillStyle = "#e8f1ff";
+    lcdCtx.font = "bold 50px monospace";
+    lcdCtx.fillText(l1, 22, 66);
+    lcdCtx.fillText(l2, 22, 132);
+    lcdTexture.needsUpdate = true;
+  }
+  ecrireLCD("Porte fermee", "En attente...");
+  boite(9.2, 3.4, 0.4, PCB_VERT, 0, 47.6, 0.95);
+  const ecran = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 2.3), new THREE.MeshBasicMaterial({ map: lcdTexture }));
+  ecran.position.set(0, 47.6, 1.17);
+  scene.add(ecran);
+  etiquette(2, 5.8, 49.4, 1.2);
+
+  // ---------- Caméra (au centre du linteau) ----------
+  boite(2.5, 2.5, 0.25, PCB_VERT, 0, 52.4, 2.35);
+  const objectif = cylindre(0.55, 0.9, NOIR, 0, 52.4, 2.9);
+  objectif.rotation.x = Math.PI / 2;
+  const verre = cylindre(0.32, 0.05, mat(0x223344, { metalness: 0.5, roughness: 0.1 }), 0, 52.4, 3.36);
+  verre.rotation.x = Math.PI / 2;
+  etiquette(1, 0, 55.2, 2.4);
+
+  // ---------- LED rouge et verte (sur la traverse) ----------
+  const ledRouge = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 12), mat(0xff3b2f, { emissive: 0xff2a1a, emissiveIntensity: 1.2 }));
+  ledRouge.position.set(-9, 45, 1.5);
+  scene.add(ledRouge);
+  const ledVerte = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 12), mat(0x2fbf4f, { emissive: 0x19d14a, emissiveIntensity: 0 }));
+  ledVerte.position.set(9, 45, 1.5);
+  scene.add(ledVerte);
+  etiquette(3, -9, 47, 1.5);
+  etiquette(3, 9, 47, 1.5);
+
+  // ---------- PIR (pilier gauche) ----------
+  boite(2.6, 2.6, 0.5, PCB_VERT, -15.5, 36, 1.8);
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(1.15, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2), BLANC);
+  dome.rotation.x = Math.PI / 2;
+  dome.position.set(-15.5, 36, 2.05);
+  scene.add(dome);
+  etiquette(4, -19, 36, 2);
+
+  // ---------- Bouton (pilier droit) ----------
+  boite(2.4, 2.4, 0.8, NOIR, 15.5, 28, 1.8);
+  const capuchon = cylindre(0.75, 0.6, mat(0xd8332a), 15.5, 28, 2.4);
+  capuchon.rotation.x = Math.PI / 2;
+  etiquette(5, 19, 28, 2);
+
+  // ---------- Ultrason HC-SR04 (devant le socle) ----------
+  boite(4.6, 2.1, 0.2, PCB_BLEU, 0, 4, 13.1);
+  [-1.3, 1.3].forEach(x => {
+    const oeil = cylindre(0.8, 1.2, METAL, x, 4, 13.8);
+    oeil.rotation.x = Math.PI / 2;
+  });
+  etiquette(6, 0, 6.6, 14);
+
+  // ---------- Porte shoji (charnière à gauche) ----------
+  const LARGEUR = 27.6, HAUTEUR = 35, BAS = 8.6;
+  const charniere = new THREE.Group();
+  charniere.position.set(-13.8, BAS + HAUTEUR / 2, 0);
+  scene.add(charniere);
+  const porte = new THREE.Group();
+  porte.position.x = LARGEUR / 2;
+  charniere.add(porte);
+  // Cadre
+  boite(1.3, HAUTEUR, 1.3, BOIS, -LARGEUR / 2 + 0.65, 0, 0, porte);
+  boite(1.3, HAUTEUR, 1.3, BOIS, LARGEUR / 2 - 0.65, 0, 0, porte);
+  boite(LARGEUR, 1.3, 1.3, BOIS, 0, HAUTEUR / 2 - 0.65, 0, porte);
+  boite(LARGEUR, 2.4, 1.3, BOIS, 0, -HAUTEUR / 2 + 1.2, 0, porte);
+  // Kumiko (grille de baguettes)
+  for (let i = 1; i <= 3; i++) {
+    boite(0.4, HAUTEUR - 2, 0.6, BOIS, -LARGEUR / 2 + i * (LARGEUR / 4), 0.5, 0, porte);
+  }
+  for (let j = 1; j <= 5; j++) {
+    boite(LARGEUR - 2, 0.4, 0.6, BOIS, 0, -HAUTEUR / 2 + 2.4 + j * ((HAUTEUR - 3.6) / 6), 0, porte);
+  }
+  // Papier
+  const papier = new THREE.Mesh(new THREE.PlaneGeometry(LARGEUR - 2.4, HAUTEUR - 3.6), PAPIER);
+  papier.position.set(0, 0.6, -0.35);
+  porte.add(papier);
+  // Poignée
+  cylindre(0.5, 0.3, METAL, LARGEUR / 2 - 3, 0, 0.75, porte).rotation.x = Math.PI / 2;
+
+  // ---------- Servomoteur (derrière la porte, en haut à gauche) ----------
+  boite(2.3, 2.2, 1.2, mat(0x2f62c9), -12.2, 44.2, -2.1);
+  const bras = boite(0.5, 0.3, 3.2, BLANC, -11.6, 43.4, -3.4);
+  etiquette(7, -12.2, 46.4, -3);
+
+  // ---------- Dans le socle ----------
+  // Raspberry Pi
+  boite(8.5, 0.18, 5.6, PCB_VERT, -10, 1.2, -1);
+  boite(1.7, 1.4, 1.4, METAL, -6.4, 2, -2.6);
+  boite(1.7, 1.4, 1.4, METAL, -6.4, 2, 0.4);
+  boite(1.6, 1.3, 1.6, METAL, -6.4, 2, -1.1);
+  boite(1.4, 0.3, 1.4, METAL, -11.4, 1.45, -0.6);
+  etiquette(9, -10, 4.2, -1);
+  // Arduino Uno + breadboard
+  boite(6.9, 0.18, 5.3, PCB_BLEU, 8, 1.2, -4);
+  boite(1.2, 1.1, 1.6, METAL, 4.7, 1.85, -5.2);
+  boite(1, 0.8, 4.6, NOIR, 9.6, 1.7, -4);
+  boite(8.2, 0.9, 5.5, BLANC, 11.5, 1.5, 4.5);
+  etiquette(10, 8, 4.2, -4);
+  // Buzzer
+  cylindre(1.2, 1, NOIR, 1.5, 1.6, 7);
+  etiquette(8, 1.5, 4.2, 7);
+
+  // Câble USB Pi -> Arduino
+  tube([[-6.4, 2, 0.4], [-3, 1.6, 2.5], [1, 1.6, -2], [4.7, 1.85, -5.2]], 0.28, 0x55595e);
+  // Nappe caméra : par-dessus le linteau, derrière le pilier gauche, jusqu'au Pi
+  tube([[0, 52.4, 2.2], [0, 53.9, 0], [0, 53.4, -2.4], [-10, 53.2, -2.4], [-15.5, 50, -2], [-15.5, 30, -1.9], [-15.5, 9, -1.9], [-14, 3, -1.5], [-11.4, 1.6, -0.6]], 0.18, 0xd9d4c7);
+  // Gaine des fils Dupont : de l'Arduino vers les composants, derrière le pilier droit
+  tube([[9.6, 2, -4], [13, 4, -3], [15.5, 9, -2], [15.5, 30, -2], [15.5, 44, -2], [8, 45, -1.6], [0, 45.5, -1.6], [-11, 44.6, -1.8]], 0.32, 0x1d1a18);
+
+  // ---------- Interactions ----------
+  const reduitMouvement = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let ouverture = 0, cible = 0;
+  const btnPorte = document.getElementById("btnPorte");
+  btnPorte.addEventListener("click", () => {
+    cible = cible ? 0 : 1;
+    btnPorte.textContent = cible ? "Fermer la porte" : "Ouvrir la porte";
+    if (cible) ecrireLCD("Porte ouverte", "Bienvenue !");
+    else ecrireLCD("Porte fermee", "En attente...");
+    ledRouge.material.emissiveIntensity = cible ? 0 : 1.2;
+    ledRouge.material.color.set(cible ? 0x5a2420 : 0xff3b2f);
+    ledVerte.material.emissiveIntensity = cible ? 1.2 : 0;
+    ledVerte.material.color.set(cible ? 0x2fbf4f : 0x1e4a2a);
+    lueur.color.set(cible ? 0xb7ffd0 : 0xffc98a);
+  });
+  ledVerte.material.color.set(0x1e4a2a);
+
+  let socleOpaque = false;
+  const btnSocle = document.getElementById("btnSocle");
+  btnSocle.addEventListener("click", () => {
+    socleOpaque = !socleOpaque;
+    SOCLE_TRANSPARENT.opacity = socleOpaque ? 1 : 0.28;
+    SOCLE_TRANSPARENT.depthWrite = socleOpaque;
+    socle.castShadow = socleOpaque;
+    btnSocle.textContent = socleOpaque ? "Socle transparent" : "Socle opaque";
+  });
+
+  const btnLabels = document.getElementById("btnLabels");
+  btnLabels.addEventListener("click", () => {
+    const off = conteneur.classList.toggle("labels-off");
+    btnLabels.textContent = off ? "Afficher les numéros" : "Masquer les numéros";
+  });
+
+  // Survol de la légende : le numéro correspondant s'allume dans la scène
+  document.querySelectorAll("#legend li").forEach(li => {
+    const on = v => {
+      li.classList.toggle("on", v);
+      (tags[li.dataset.id] || []).forEach(t => t.classList.toggle("on", v));
+    };
+    li.addEventListener("mouseenter", () => on(true));
+    li.addEventListener("mouseleave", () => on(false));
+    li.addEventListener("focus", () => on(true));
+    li.addEventListener("blur", () => on(false));
+  });
+
+  // ---------- Taille et animation ----------
+  function redimensionner() {
+    const w = conteneur.clientWidth, h = conteneur.clientHeight;
+    renderer.setSize(w, h);
+    labelRenderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(redimensionner).observe(conteneur);
+  redimensionner();
+
+  function animer() {
+    requestAnimationFrame(animer);
+    ouverture += reduitMouvement ? (cible - ouverture) : (cible - ouverture) * 0.06;
+    charniere.rotation.y = ouverture * 1.45;
+    bras.rotation.y = -ouverture * 1.2;
+    controls.update();
+    renderer.render(scene, camera);
+    labelRenderer.render(scene, camera);
+  }
+  animer();
+})();
+</script>
+</body>
+</html>

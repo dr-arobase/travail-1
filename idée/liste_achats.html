@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Porte magique : liste d'achats</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Plan : les couleurs du modèle 3D « Porte magique » (violet nuit, pierre lavande, or).
+     Mise en page : une colonne de listes à cocher, budget restant collé en haut. */
+  :root {
+    --bg: #f4f1fa;
+    --surface: #ffffff;
+    --ink: #1f1833;
+    --muted: #625a78;
+    --accent: #5b3fa0;
+    --gold: #a77a0c;
+    --line: #e0d9ee;
+    --soft: #ece6f7;
+    --done: #2f8a55;
+    --font-display: "Cinzel", Georgia, serif;
+    --font-body: "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1b1530;
+      --surface: #241c3d;
+      --ink: #efeaf9;
+      --muted: #aba3c4;
+      --accent: #b49cff;
+      --gold: #e8b923;
+      --line: #3a3060;
+      --soft: #2e2550;
+      --done: #5fd38f;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1b1530;
+    --surface: #241c3d;
+    --ink: #efeaf9;
+    --muted: #aba3c4;
+    --accent: #b49cff;
+    --gold: #e8b923;
+    --line: #3a3060;
+    --soft: #2e2550;
+    --done: #5fd38f;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 var(--font-body);
+  }
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 28px 16px 48px;
+    display: grid;
+    gap: 22px;
+  }
+  header { display: grid; gap: 6px; }
+  .kicker { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); }
+  h1 {
+    font: 700 clamp(28px, 5vw, 42px)/1.1 var(--font-display);
+    margin: 0;
+    text-wrap: balance;
+  }
+  header p { margin: 0; color: var(--muted); max-width: 65ch; }
+
+  .budget {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center;
+    box-shadow: 0 6px 18px rgba(31, 24, 51, .08);
+  }
+  .budget .big { font: 700 26px/1 var(--font-body); font-variant-numeric: tabular-nums; color: var(--accent); }
+  .budget small { display: block; color: var(--muted); font-size: 13px; }
+  .bar { flex: 1 1 200px; height: 8px; border-radius: 4px; background: var(--soft); overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--done); transition: width .3s; }
+  .budget button {
+    font: 600 14px/1 var(--font-body);
+    padding: 9px 12px; border-radius: 6px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+  }
+
+  section { display: grid; gap: 10px; }
+  h2 {
+    font: 700 21px/1.2 var(--font-display);
+    margin: 0;
+    display: flex; gap: 10px; align-items: baseline;
+  }
+  h2 span { font: 600 14px/1 var(--font-body); color: var(--muted); }
+  .intro { margin: 0; color: var(--muted); font-size: 15px; max-width: 65ch; }
+
+  .list { display: grid; gap: 8px; }
+  .item {
+    display: grid;
+    grid-template-columns: 26px 1fr auto;
+    gap: 12px; align-items: start;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .item.must { border-left-color: var(--gold); }
+  .item.checked { border-left-color: var(--done); }
+  .item.checked .name { text-decoration: line-through; color: var(--muted); }
+  .item input {
+    width: 20px; height: 20px; margin: 2px 0 0;
+    accent-color: var(--done); cursor: pointer;
+  }
+  .item label { cursor: pointer; display: grid; gap: 2px; }
+  .name { font-weight: 700; }
+  .note { color: var(--muted); font-size: 14px; }
+  .where { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .chip {
+    font-size: 12px; font-weight: 700;
+    padding: 3px 8px; border-radius: 999px;
+    background: var(--soft); color: var(--ink);
+    text-decoration: none;
+  }
+  a.chip { color: var(--accent); }
+  a.chip:hover { text-decoration: underline; }
+  .price { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; text-align: right; }
+  .price small { display: block; font-weight: 600; color: var(--muted); font-size: 12px; }
+  .tag-if { color: var(--gold); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+
+  .tip {
+    background: var(--soft);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+  .tip b { color: var(--accent); }
+
+  .stores { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+  .store {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px 14px; display: grid; gap: 4px; align-content: start;
+  }
+  .store b { font-size: 16px; }
+  .store span { color: var(--muted); font-size: 14px; }
+
+  footer { color: var(--muted); font-size: 13px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (max-width: 480px) {
+    .item { grid-template-columns: 24px 1fr; }
+    .price { grid-column: 2; text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="kicker">Projet Internet des objets · itération 2</div>
+    <h1>Porte magique : liste d'achats</h1>
+    <p>Tout ce qu'il faut pour construire la maquette du château avec la caméra. Coche chaque élément quand tu l'as : le budget restant se met à jour. Les prix sont des estimations, à vérifier en magasin.</p>
+  </header>
+
+  <div class="budget" aria-live="polite">
+    <div>
+      <div class="big" id="restant">0 $</div>
+      <small>reste à dépenser (estimation)</small>
+    </div>
+    <div>
+      <div class="big" id="compte" style="color: var(--done)">0 / 0</div>
+      <small>éléments cochés</small>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="barre"></i></div>
+    <button type="button" id="reset">Tout décocher</button>
+  </div>
+
+  <section>
+    <h2>1. Déjà dans ton kit Arduino <span>à vérifier</span></h2>
+    <p class="intro">Ces pièces sont dans presque tous les kits de départ. Coche-les quand tu les as trouvées dans ta boîte.</p>
+    <div class="list" data-group="kit"></div>
+    <div class="tip"><b>Important pour l'écran LCD :</b> regarde derrière. S'il y a un petit module noir avec seulement 4 broches (GND, VCC, SDA, SCL), c'est bon. S'il a 16 broches, c'est un LCD sans I2C : il faut acheter le module I2C (voir plus bas). C'est peut-être la cause du message « LCD introuvable ».</div>
+  </section>
+
+  <section>
+    <h2>2. Électronique à acheter</h2>
+    <p class="intro">Les éléments avec une bordure dorée sont obligatoires. Les autres, seulement si ton kit ne les a pas.</p>
+    <div class="list" data-group="elec"></div>
+  </section>
+
+  <section>
+    <h2>3. Structure du château</h2>
+    <p class="intro">Pour la planche, le mur en pierre lavande, la porte violette avec le cadre doré et les étoiles.</p>
+    <div class="list" data-group="structure"></div>
+  </section>
+
+  <section>
+    <h2>Où acheter</h2>
+    <div class="stores">
+      <div class="store"><b>Addison Électronique</b><span>Petites pièces : résistances, LED, boutons, gaine thermo. Appelle avant pour les modules Arduino : (514) 376-1740 (numéro trouvé dans un annuaire, peut-être ancien).</span></div>
+      <div class="store"><b>Amazon.ca</b><span>Modules (LCD I2C, PIR, servo), nappe caméra, rallonges Dupont. Livraison en 1 à 3 jours avec Prime.</span></div>
+      <div class="store"><b>Dollarama</b><span>Carton mousse, peinture acrylique, ruban doré, autocollants, colle chaude, cutter.</span></div>
+      <div class="store"><b>DeSerres</b><span>Carton mousse de meilleure qualité et en couleurs, peinture dorée.</span></div>
+      <div class="store"><b>Rona / Home Depot</b><span>Planche de contreplaqué coupée sur place, mini charnières.</span></div>
+      <div class="store"><b>Best Buy Canada</b><span>Paquet de 3 nappes caméra (30, 50 et 100 cm).</span></div>
+    </div>
+  </section>
+
+  <footer>Les liens Amazon et Home Depot ouvrent une recherche du produit. Dollarama, DeSerres et Addison n'ont pas de liens : leurs produits se trouvent en magasin. Tes cases cochées restent enregistrées dans ce navigateur seulement.</footer>
+</div>
+
+<script>
+(function () {
+  const amazon = q => "https://www.amazon.ca/s?k=" + encodeURIComponent(q);
+  const homedepot = q => "https://www.homedepot.ca/search?q=" + encodeURIComponent(q);
+  const BESTBUY_NAPPES = "https://www.bestbuy.ca/en-ca/product/15-pin-30cm-50cm-100cm-ffc-ribbon-flexible-flat-cable-for-raspberry-pi-module-camera-3pcs-set/19617592";
+  const A = q => ["Amazon.ca", amazon(q)];
+  const SI_MANQUE = q => ["Si manquant : Amazon.ca", amazon(q)];
+  // min, max en dollars ; must = obligatoire ; si = texte « seulement si... »
+  const items = {
+    kit: [
+      { id: "uno", name: "Arduino Uno + câble USB", note: "La carte et le câble pour la brancher au Raspberry Pi.", where: [SI_MANQUE("arduino uno r3 usb cable")] },
+      { id: "bb", name: "Breadboard", note: "Pour regrouper les GND, le 5V et les résistances.", where: [SI_MANQUE("breadboard 830 points")] },
+      { id: "servo", name: "Servomoteur SG90", note: "Ouvre la porte. Broche D9.", where: [SI_MANQUE("SG90 micro servo")] },
+      { id: "us", name: "Ultrason HC-SR04", note: "4 broches : VCC, Trig (D4), Echo (D5), GND.", where: [SI_MANQUE("HC-SR04 ultrasonic sensor")] },
+      { id: "rgb", name: "LED RGB (4 pattes)", note: "Cathode commune : patte longue au GND. Broches D10, D11, D12.", where: [SI_MANQUE("RGB LED common cathode 5mm")] },
+      { id: "led", name: "LED rouge 5 mm", note: "LED d'état, broche D13.", where: [SI_MANQUE("5mm LED assortment")] },
+      { id: "res", name: "4 résistances 220 Ω", note: "Bandes rouge, rouge, brun. Une par couleur de LED.", where: [SI_MANQUE("220 ohm resistor")] },
+      { id: "btn", name: "Bouton poussoir", note: "Broche D2, l'autre patte au GND.", where: [SI_MANQUE("tactile push button 12mm arduino")] },
+      { id: "buz", name: "Buzzer passif", note: "Sans autocollant sur le dessus, circuit vert visible en dessous. Broche D8.", where: [SI_MANQUE("passive buzzer arduino")] },
+      { id: "fils", name: "Fils Dupont mâle-mâle", note: "Pour la breadboard.", where: [SI_MANQUE("dupont jumper wires male male")] },
+    ],
+    elec: [
+      { id: "nappe", name: "Nappe caméra Pi 30 ou 50 cm", note: "15 broches pour un Pi 3 ou 4. 22 vers 15 broches pour un Pi 5 ou Zero.", min: 5, max: 10, must: true,
+        where: [A("raspberry pi camera cable 50cm"), ["Best Buy (paquet 30/50/100 cm)", BESTBUY_NAPPES]] },
+      { id: "dupont", name: "Rallonges Dupont mâle-femelle 20 à 30 cm", note: "Les fils du kit sont trop courts pour aller jusqu'au mur.", min: 6, max: 10, must: true,
+        where: [A("dupont jumper wires male female 30cm"), ["Addison"]] },
+      { id: "i2c", name: "Module I2C pour LCD (ou LCD 1602 I2C complet)", note: "Le module seul est à souder. Le LCD complet est prêt à brancher.", si: "Si ton LCD a 16 broches", min: 3, max: 12,
+        where: [["LCD complet : Amazon.ca", amazon("LCD 1602 I2C arduino")], ["Module seul : Amazon.ca", amazon("PCF8574 I2C LCD adapter")]] },
+      { id: "pir", name: "Capteur PIR HC-SR501", note: "Dôme blanc avec 2 petites vis orange. Broche D3.", si: "Si pas dans le kit", min: 3, max: 6,
+        where: [A("HC-SR501 PIR sensor"), ["Addison"]] },
+      { id: "piles", name: "Support 4 piles AA (alimentation du servo)", note: "Évite que le servo fasse redémarrer l'Arduino. GND relié au GND de l'Arduino.", si: "Conseillé", min: 3, max: 6,
+        where: [A("4 AA battery holder with wires"), ["Addison"]] },
+      { id: "attache", name: "Attaches et gaine pour fils", note: "Pour cacher les fils derrière le mur.", min: 3, max: 5,
+        where: [["Attaches : Amazon.ca", amazon("cable ties small")], ["Gaine : Amazon.ca", amazon("spiral cable wrap")], ["Dollarama"]] },
+    ],
+    structure: [
+      { id: "planche", name: "1 panneau de contreplaqué 2 pi × 2 pi (61 × 61 cm)", note: "Une seule planche, vendue à l’unité (« panneau de projet »). Fais-la couper à 45 × 40 cm en magasin.", min: 8, max: 15, must: true,
+        where: [["Home Depot (1 panneau)", homedepot("panneau de projet contreplaqué 2 pi x 2 pi")], ["Rona"]] },
+      { id: "foam", name: "2 ou 3 feuilles de carton mousse 5 mm", note: "Murs, cadre de la porte et créneaux du château.", min: 6, max: 12, must: true,
+        where: [A("foam board 5mm 20x30"), ["Dollarama"], ["DeSerres"]] },
+      { id: "violet", name: "Peinture acrylique violet foncé", note: "Pour la porte.", min: 2, max: 4, must: true,
+        where: [A("acrylic paint dark purple"), ["Dollarama"]] },
+      { id: "lavande", name: "Peinture lavande ou gris clair", note: "Pour les murs en pierre.", min: 2, max: 4, must: true,
+        where: [A("acrylic paint lavender"), ["Dollarama"]] },
+      { id: "or", name: "Ruban adhésif doré (washi tape)", note: "Le cadre doré sur la porte.", min: 2, max: 4,
+        where: [A("gold washi tape"), ["Dollarama"], ["DeSerres"]] },
+      { id: "etoiles", name: "Autocollants étoiles dorées", note: "Les étoiles sur la porte.", min: 2, max: 3,
+        where: [A("gold star stickers"), ["Dollarama"]] },
+      { id: "poignee", name: "Bouton ou punaise dorée", note: "La poignée de la porte.", min: 1, max: 3,
+        where: [A("mini gold knob drawer"), ["Dollarama"]] },
+      { id: "charn", name: "2 mini charnières (ou ruban toilé)", note: "La charnière de la porte, côté servo.", min: 2, max: 5,
+        where: [A("mini hinges small brass"), ["Home Depot", homedepot("charnière miniature")], ["Dollarama"]] },
+      { id: "outils", name: "Colle chaude + bâtons, cutter, règle en métal", note: "Si tu ne les as pas déjà.", min: 5, max: 10,
+        where: [["Colle chaude : Amazon.ca", amazon("mini hot glue gun sticks")], ["Cutter + règle : Amazon.ca", amazon("utility knife metal ruler")], ["Dollarama"]] },
+    ],
+  };
+
+  const CLE = "porte-magique-achats";
+  let coches = {};
+  try { coches = JSON.parse(localStorage.getItem(CLE)) || {}; } catch (e) { coches = {}; }
+  const sauver = () => { try { localStorage.setItem(CLE, JSON.stringify(coches)); } catch (e) { /* pas de stockage : on continue */ } };
+
+  const tous = [];
+  Object.entries(items).forEach(([groupe, liste]) => {
+    const zone = document.querySelector(`[data-group="${groupe}"]`);
+    liste.forEach(it => {
+      tous.push(it);
+      const ligne = document.createElement("div");
+      ligne.className = "item" + (it.must ? " must" : "");
+      const idInput = "chk-" + it.id;
+      const prix = it.min ? `${it.min}–${it.max} $` : "déjà là";
+      const ou = (it.where || []).map(([nom, lien]) =>
+        lien ? `<a class="chip" href="${lien}" target="_blank" rel="noopener">${nom} ↗</a>` : `<span class="chip">${nom}</span>`).join("");
+      ligne.innerHTML = `
+        <input type="checkbox" id="${idInput}">
+        <label for="${idInput}">
+          ${it.si ? `<span class="tag-if">${it.si}</span>` : ""}
+          <span class="name">${it.name}</span>
+          <span class="note">${it.note}</span>
+          ${ou ? `<span class="where">${ou}</span>` : ""}
+        </label>
+        <div class="price">${prix}${it.min ? "<small>estimation</small>" : ""}</div>`;
+      const box = ligne.querySelector("input");
+      box.checked = !!coches[it.id];
+      ligne.classList.toggle("checked", box.checked);
+      box.addEventListener("change", () => {
+        coches[it.id] = box.checked;
+        ligne.classList.toggle("checked", box.checked);
+        sauver();
+        maj();
+      });
+      it.box = box;
+      zone.appendChild(ligne);
+    });
+  });
+
+  function maj() {
+    let min = 0, max = 0, n = 0;
+    tous.forEach(it => {
+      if (it.box.checked) { n++; return; }
+      if (it.min && (it.must || !it.si || it.si === "Conseillé")) { min += it.min; max += it.max; }
+    });
+    document.getElementById("restant").textContent = min === max ? `${min} $` : `${min} à ${max} $`;
+    document.getElementById("compte").textContent = `${n} / ${tous.length}`;
+    document.getElementById("barre").style.width = (n / tous.length * 100) + "%";
+  }
+
+  document.getElementById("reset").addEventListener("click", () => {
+    tous.forEach(it => {
+      it.box.checked = false;
+      it.box.closest(".item").classList.remove("checked");
+    });
+    coches = {};
+    sauver();
+    maj();
+  });
+
+  maj();
+})();
+</script>
+</body>
+</html>
