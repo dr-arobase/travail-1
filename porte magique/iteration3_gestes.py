@@ -356,10 +356,15 @@ def main():
     stabilisateur = StabilisateurGeste()
     threading.Thread(target=executer_actions, daemon=True).start()
 
-    # Le système de la porte démarre OFF dans l'Arduino : on l'active
-    # dès que le premier STATUS est reçu.
-    time.sleep(1.5)
-    porte_utils.set_systeme(True)
+    # Le système de la porte démarre OFF dans l'Arduino : on l'active dès que
+    # l'Arduino est connecté (même s'il se connecte plus tard) et a envoyé son état.
+    def activer_systeme_des_que_possible():
+        while not porte_utils.est_connecte():
+            time.sleep(0.5)
+        time.sleep(1.5)
+        porte_utils.set_systeme(True)
+
+    threading.Thread(target=activer_systeme_des_que_possible, daemon=True).start()
 
     derniere_action = ""
     temps_precedent = time.time()

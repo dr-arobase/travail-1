@@ -63,7 +63,15 @@ penchée, et peu importe que ce soit la main gauche ou la main droite.
 **Sur le PC (Windows)**, depuis le dossier du projet :
 
 ```powershell
-.\venv_mediapipe\Scripts\python.exe "porte magique\iteration3_gestes.py"
+.\demarrer.ps1
+```
+
+Ou à la main : activer l'environnement, qui est dans le dossier `porte magique\venv`,
+puis lancer le programme (les guillemets sont obligatoires à cause de l'espace) :
+
+```powershell
+& ".\porte magique\venv\Scripts\Activate.ps1"
+python "porte magique\iteration3_gestes.py"
 ```
 
 **Sur le Raspberry Pi** :

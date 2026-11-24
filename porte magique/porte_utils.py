@@ -257,4 +257,13 @@ def _read_from_serial():
             time.sleep(1)
 
 
-_connecter()
+def _reconnecter_en_boucle():
+    """Port occupé (Moniteur série, autre programme) ou carte débranchée :
+    on réessaie toutes les 3 secondes au lieu d'abandonner."""
+    print("Arduino : nouvel essai toutes les 3 secondes...")
+    while not _connecter():
+        time.sleep(3)
+
+
+if not _connecter():
+    threading.Thread(target=_reconnecter_en_boucle, daemon=True).start()

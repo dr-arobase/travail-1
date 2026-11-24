@@ -8,11 +8,11 @@ $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
 # 1. Activer l'environnement Python (MediaPipe, OpenCV, pyserial, aliot)
-& "$PSScriptRoot\venv_mediapipe\Scripts\Activate.ps1"
+& "$PSScriptRoot\porte magique\venv\Scripts\Activate.ps1"
 $env:PYTHONIOENCODING = "utf-8"
 
-# 2. Objets ALIOT à connecter (projet « Porte magique » et rasp_door)
-if (-not $env:PORTE_OBJETS) { $env:PORTE_OBJETS = "porte_magique,rasp_door" }
+# 2. Objets ALIOT à connecter : toujours les deux (projet « Porte magique » et rasp_door)
+$env:PORTE_OBJETS = "porte_magique,rasp_door"
 
 # 3. Lancer la porte
 Write-Host "Environnement actif : $(python --version)" -ForegroundColor Magenta
