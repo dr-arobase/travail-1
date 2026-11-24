@@ -112,6 +112,13 @@ void setup() {
   delay(1000);
   lcdAMettreAJour = true;
 
+  // On part de l'état réel du bouton : sinon le démarrage de la carte
+  // est compté comme un appui et le système s'allume tout seul.
+  etatBoutonStable = digitalRead(PIN_BOUTON);
+  dernierEtatBouton = etatBoutonStable;
+  boutonTraite = (etatBoutonStable == LOW);
+  tRebond = millis();
+
   Serial.println(F("INFO:Arduino pret"));
   envoyerStatus();
 }

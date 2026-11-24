@@ -4,6 +4,8 @@ Itération 3 : Porte magique contrôlée par les gestes (MediaPipe)
 Le Raspberry Pi (ou le PC) filme la main, reconnaît le geste avec la
 librairie quickHand.py créée en classe, puis envoie la commande à l'Arduino
 par le port série (porte_utils.py, même protocole qu'à l'itération 2).
+Le geste et l'état de la porte sont aussi publiés sur le tableau de bord
+ALIOT (tableau_aliot.py).
 
 Gestes reconnus :
     Main ouverte (5 doigts)   -> ouvrir la porte + mélodie
@@ -34,6 +36,7 @@ import mediapipe as mp
 import mediapipe.python.solution_base as mp_solution_base
 
 import porte_utils
+import tableau_aliot
 from quickHand import HandDetector
 
 
@@ -281,6 +284,7 @@ def executer_actions():
         geste = file_actions.get()
         description, fonction = ACTIONS[geste]
         print(f"Geste « {NOMS_GESTES[geste]} » -> {description}")
+        tableau_aliot.signaler_geste(NOMS_GESTES[geste], description)
         fonction()
 
 
@@ -337,7 +341,9 @@ def dessiner_panneau(image, geste, stabilisateur, derniere_action, fps):
     for code, (description, _) in ACTIONS.items():
         y += 18
         texte(panneau, f"{NOMS_GESTES[code]} = {description}", (x, y), BLANC, 0.4)
-    texte(panneau, f"{fps:.0f} FPS   q = quitter", (x, image.shape[0] - 10), GRIS, 0.4)
+    texte(panneau, f"{fps:.0f} FPS   {tableau_aliot.resume_connexion()}   q = quitter",
+          (x, image.shape[0] - 10),
+          VERT if tableau_aliot.est_connecte() else GRIS, 0.4)
     return panneau
 
 
@@ -346,6 +352,7 @@ def main():
     corriger_chemin_mediapipe()
     detecteur = HandDetector(detectionCon=0.7, maxHands=2)
     camera = Camera()
+    tableau_aliot.demarrer()
     stabilisateur = StabilisateurGeste()
     threading.Thread(target=executer_actions, daemon=True).start()
 

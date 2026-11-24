@@ -14,6 +14,7 @@ Raspberry Pi (ou un PC) la contrôle par le port série (9600 bauds).
 | [porte_utils.py](porte_utils.py) | Communication série avec l'Arduino, utilisée par tous les programmes Python |
 | [quickHand.py](quickHand.py) | Librairie de détection des mains créée en classe |
 | [iteration3_gestes.py](iteration3_gestes.py) | **Itération 3** : les gestes contrôlent la porte |
+| [tableau_aliot.py](tableau_aliot.py) | Itération 3 : envoie le geste et l'état de la porte aux 2 objets ALIOT (`rasp_door` et `porte_magique`) |
 | [iteration2.py](iteration2.py) | Itération 2 : tableau de bord ALIOT |
 | [log.py](log.py) | Itération 2 : version simplifiée pour ALIOT |
 | [config.ini](config.ini) | Identifiants des objets ALIOT |
@@ -51,6 +52,7 @@ Fonctionnement :
 2. Un geste doit être tenu **0,7 seconde** pour être validé : la barre à l'écran se remplit. Il n'est déclenché qu'une fois tant que la main ne change pas de geste.
 3. Le programme envoie la commande à l'Arduino par le port série (`porte_utils.py`).
 4. La fenêtre affiche le geste détecté, la dernière action et l'état réel de l'Arduino (système, LED, distance, texte du LCD). L'écran LCD affiche aussi le geste.
+5. Le geste, l'action et l'état de la porte sont publiés sur les tableaux de bord ALIVEcode (`/doc/geste`, `/doc/action_geste`, `/doc/etat`...). Les boutons des tableaux de bord de l'itération 2 marchent aussi pendant ce temps.
 
 Amélioration de la librairie : `fingersList()` compare des **distances** au lieu
 des coordonnées x et y. Le comptage des doigts marche donc même si la main est
