@@ -15,7 +15,7 @@ from aliot.aliot_obj import AliotObj
 time.sleep(5)
 
 # Objet utilisé : "porte_magique" (Massyle) ou "rasp_door" (Ernst)
-OBJET = os.getenv("PORTE_OBJET", "porte_magique")
+OBJET = os.getenv("PORTE_OBJET", "rasp_door" or "porte_magique")
 
 # Création de l'objet à partir du fichier de configuration
 porte = AliotObj(OBJET)

@@ -1,4 +1,4 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:system",
-    "python.defaultInterpreterPath": "${workspaceFolder}/PORTE MAGIQUE \u2728/Scripts/python.exe"
+    "python.defaultInterpreterPath": "${workspaceFolder}/venv_mediapipe/Scripts/python.exe"
 }

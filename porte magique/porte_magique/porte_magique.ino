@@ -1,5 +1,13 @@
 /*
- * Itération 2 - Porte magique (côté Arduino)
+ * Itérations 2 et 3 - Porte magique (côté Arduino)
+ *
+ * Itération 2 : iteration2.py (tableau de bord ALIOT) envoie les commandes.
+ * Itération 3 : iteration3_gestes.py reconnaît les gestes de la main (MediaPipe)
+ *               et envoie les MÊMES commandes série : OPEN, CLOSE, TOGGLE,
+ *               LED:..., BUZZER:..., BUZZ:..., MSG:...
+ *
+ * Broches (montage réel) : TRIG 3, ECHO 2, buzzer 4, LED rouge 6,
+ *                          LED verte 7, bouton 10, LCD I2C SDA A4 / SCL A5
  *
  * Matériel :
  *   1. Afficheur LCD I2C 16x2   -> messages (« Bienvenue Massyle », « Acces refuse »...)
@@ -24,7 +32,7 @@
 #include <LiquidCrystal_I2C.h>
 
 // ---------- Broches ----------
-const uint8_t PIN_BOUTON    = 8;   // broche 8, l'autre patte du bouton va au GND
+const uint8_t PIN_BOUTON    = 10;  // broche 10, l'autre patte du bouton va au GND
 const uint8_t PIN_TRIG      = 3;
 const uint8_t PIN_ECHO      = 2;
 const uint8_t PIN_BUZZER    = 4;
@@ -253,8 +261,8 @@ void setLeds(bool verte, bool rouge) {
 
 void gererLeds() {
   if (!ledsAutomatiques) return;
-  if (!systemeActif) {             // système OFF : rouge fixe
-    setLeds(false, true);
+  if (!systemeActif) {             // système OFF : tout est éteint
+    setLeds(false, false);
     return;
   }
   switch (etat) {

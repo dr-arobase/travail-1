@@ -103,8 +103,36 @@ def afficher_lcd(ligne1, ligne2=""):
 
 
 def buzzer(frequence):
-    """Fait sonner le buzzer (0 = silence)."""
+    """Fait sonner le buzzer (0 = silence). Le buzzer doit être activé (activer_buzzer)."""
     return _envoyer(f"BUZZ:{int(frequence)}\n")
+
+
+def activer_buzzer(actif):
+    """Le buzzer est désactivé par défaut dans l'Arduino : True l'autorise à sonner."""
+    return _envoyer("BUZZER:ON\n" if actif else "BUZZER:OFF\n")
+
+
+def regler_led_rouge(allumee):
+    """Allume ou éteint la LED rouge (mode manuel)."""
+    return _envoyer("LED:ROUGE:ON\n" if allumee else "LED:ROUGE:OFF\n")
+
+
+def regler_led_verte(allumee):
+    """Allume ou éteint la LED verte (mode manuel)."""
+    return _envoyer("LED:VERTE:ON\n" if allumee else "LED:VERTE:OFF\n")
+
+
+def eteindre_leds():
+    return _envoyer("LED:OFF\n")
+
+
+def leds_automatiques():
+    """Les LED suivent de nouveau l'état de la porte."""
+    return _envoyer("LED:AUTO\n")
+
+
+def est_connecte():
+    return _serial is not None and _lecture_active.is_set()
 
 
 def set_systeme(state):

@@ -1,0 +1,156 @@
+INSTALLATION DE MEDIAPIPE SUR WINDOWS
+======================================
+
+1. Vérifier la version de Python
+-------------------------------
+
+Commande :
+
+    python --version
+
+La commande "py" n'était pas disponible sur cet ordinateur. La commande
+"python" doit donc être utilisée lorsque Python est correctement installé.
+
+
+2. Installer Python 3.15.2
+--------------------------
+
+Python 3.15.2 a été installé depuis la page officielle :
+
+    https://www.python.org/downloads/release/python-3152/
+
+Une autre méthode possible avec winget :
+
+    winget install --id Python.Python.3.15 --exact
+
+Après l'installation, fermer puis rouvrir PowerShell.
+
+Vérifier l'installation :
+
+    python --version
+
+Si la commande "python" ouvre encore le Microsoft Store, utiliser le chemin
+complet suivant :
+
+    C:\Users\mchir\AppData\Local\Programs\Python\Python315\python.exe
+
+
+3. Créer l'environnement virtuel
+--------------------------------
+
+Depuis le dossier du projet :
+
+    C:\Users\mchir\OneDrive - Collège de Maisonneuve\Internet des objets\Literation 3
+
+Créer l'environnement avec Python 3.15.2 :
+
+    C:\Users\mchir\AppData\Local\Programs\Python\Python315\python.exe -m venv venv_mediapipe
+
+Activer l'environnement dans PowerShell :
+
+    .\venv_mediapipe\Scripts\Activate.ps1
+
+Si PowerShell bloque l'activation :
+
+    Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+
+Puis relancer :
+
+    .\venv_mediapipe\Scripts\Activate.ps1
+
+Vérifier la version utilisée par l'environnement :
+
+    python --version
+
+
+4. Installer les dépendances
+----------------------------
+
+Le fichier requirements.txt contient :
+
+    mediapipe
+    opencv-python
+    numpy
+    aliot-py
+    pyserial
+
+Installer les dépendances depuis l'environnement virtuel :
+
+    python -m pip install -r requirements.txt
+
+Si la commande "python" n'est pas reconnue, utiliser :
+
+    .\venv_mediapipe\Scripts\python.exe -m pip install -r requirements.txt
+
+
+5. Vérifier l'installation
+--------------------------
+
+    python -c "import mediapipe, cv2; print('Installation réussie')"
+
+
+6. Notes importantes
+--------------------
+
+- L'ancien environnement virtuel utilisait Python 3.13.14 et pouvait devenir
+  invalide si l'installation Python était supprimée ou déplacée.
+- Pour changer de version Python, il faut supprimer puis recréer
+  l'environnement virtuel.
+- MediaPipe peut ne pas encore fournir de paquet compatible avec Python 3.15.
+  Si "pip install -r requirements.txt" échoue sur mediapipe, utiliser Python
+  3.14 ou une version officiellement prise en charge par MediaPipe.
+- La commande "deactivate" permet de quitter l'environnement virtuel.
+
+
+7. Démarrer l'exercice 7 (personne / peau / son)
+-------------------------------------------------
+
+Ouvrir PowerShell dans le dossier du projet :
+
+    cd "C:\Users\mchir\OneDrive - Collège de Maisonneuve\Internet des objets\Literation 3"
+
+Lancer le programme (avec la console, pour voir les erreurs) :
+
+    .\venv_mediapipe_312\Scripts\python.exe MediaPipe\exercises\exercise7.py
+
+Ou sans la console noire :
+
+    .\venv_mediapipe_312\Scripts\pythonw.exe MediaPipe\exercises\exercise7.py
+
+Dans VS Code : Ctrl+Shift+P -> "Python: Select Interpreter" ->
+choisir venv_mediapipe_312, puis le bouton ▶ sur exercise7.py.
+
+Avant de lancer :
+- Fermer l'application Caméra de Windows (ou Teams, Zoom...) : une seule
+  application peut utiliser la caméra à la fois.
+- Les fichiers o.mp3 et x.mp3 doivent être dans le dossier "Literation 3".
+
+Utilisation :
+- q ou Échap : quitter.
+- Clic sur une personne : inverse peau claire <-> peau foncée.
+- Attendre environ 3 secondes au démarrage (la caméra règle son exposition).
+- Regarder la caméra de face, avec la lumière devant soi (pas dos à la
+  fenêtre) pour une bonne mesure de la couleur de peau.
+
+Réglages (en haut de exercise7.py) :
+- GROUP_NAMES : texte affiché (1 = o.mp3, 2 = x.mp3).
+- SOUNDS : fichiers son.
+- MAX_PITCH / MAX_YAW : tête trop penchée ou tournée = pas de mesure.
+
+Notes :
+- MediaPipe ne lit pas les chemins avec accents ("Collège"). Le programme
+  copie ses modèles une fois dans %LOCALAPPDATA%\mediapipe_ascii.
+- Écran à 150 % : le programme affiche l'image pixel pour pixel (nette),
+  la fenêtre est donc plus petite.
+
+Dépannage :
+- "Camera introuvable ou occupee" : une autre application utilise la caméra.
+  Fermer l'app Caméra, Teams, Zoom, ou une autre fenêtre de l'exercice 7.
+  Une copie lancée avec pythonw.exe n'a pas de console : la fermer avec q /
+  Échap dans sa fenêtre, ou dans le Gestionnaire des tâches (Ctrl+Maj+Échap)
+  -> terminer "pythonw.exe" / "python.exe".
+  Le programme réessaie 5 fois (5 secondes) avant d'abandonner.
+- Les lignes "W0000 ... inference_feedback_manager" et "INFO: Created
+  TensorFlow Lite XNNPACK delegate" sont normales : ce ne sont pas des erreurs.
+- Lancer une seule commande à la fois (ne pas coller deux commandes
+  ensemble, ex. "exercise5.pysubst ...").
