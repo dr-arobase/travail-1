@@ -8,7 +8,8 @@ Le geste et l'état de la porte sont aussi publiés sur le tableau de bord
 ALIOT (tableau_aliot.py).
 
 Gestes reconnus :
-    Main ouverte (5 doigts)   -> ouvrir la porte + mélodie
+    Main ouverte (5 doigts)   -> ouvrir la porte (servo de 155° à 60°) + mélodie
+                                 (porte verrouillée : accès refusé)
     Poing fermé (0 doigt)     -> fermer la porte
     1 doigt (index)           -> LED rouge
     2 doigts                  -> LED verte
@@ -17,6 +18,10 @@ Gestes reconnus :
     Pouce levé                -> système ON
     Pouce baissé              -> système OFF
     Deux mains ouvertes       -> mode fête (LED qui clignotent + mélodie)
+
+Accès refusé : main ouverte alors que la porte est verrouillée (système OFF).
+L'écran affiche « Acces refuse », la LED rouge clignote et le buzzer joue
+la mélodie de refus.
 
 Un geste doit être tenu MAINTIEN_S secondes pour être validé : ça évite les
 fausses détections quand la main bouge.
@@ -213,9 +218,29 @@ def jouer_notes(notes, duree=0.15):
 
 
 def action_ouvrir():
+    if not porte_utils.get_actif():
+        action_acces_refuse()
+        return
     porte_utils.leds_automatiques()
     porte_utils.ouvrir("Geste magique")
     jouer_notes([523, 659, 784, 1047])
+
+
+def action_acces_refuse():
+    """Main ouverte alors que la porte est verrouillée (système OFF)."""
+    print("  -> porte verrouillée : accès refusé")
+    tableau_aliot.signaler_geste(NOMS_GESTES["MAIN_OUVERTE"], "Acces refuse")
+    porte_utils.afficher_lcd("Acces refuse", "Porte verrouill.")
+    porte_utils.activer_buzzer(True)
+    for note in (330, 220, 330, 220):           # LED rouge qui clignote + mélodie de refus
+        porte_utils.regler_led_rouge(True)
+        porte_utils.buzzer(note)
+        time.sleep(0.25)
+        porte_utils.regler_led_rouge(False)
+        porte_utils.buzzer(0)
+        time.sleep(0.25)
+    porte_utils.activer_buzzer(False)
+    porte_utils.leds_automatiques()
 
 
 def action_fermer():
@@ -389,6 +414,8 @@ def main():
             # 3. Envoi de l'action à l'Arduino
             if a_declencher:
                 derniere_action = ACTIONS[a_declencher][0]
+                if a_declencher == "MAIN_OUVERTE" and not porte_utils.get_actif():
+                    derniere_action = "Acces refuse"
                 file_actions.put(a_declencher)
 
             # 4. Affichage

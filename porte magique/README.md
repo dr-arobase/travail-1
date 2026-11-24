@@ -15,6 +15,7 @@ Raspberry Pi (ou un PC) la contrôle par le port série (9600 bauds).
 | [quickHand.py](quickHand.py) | Librairie de détection des mains créée en classe |
 | [iteration3_gestes.py](iteration3_gestes.py) | **Itération 3** : les gestes contrôlent la porte |
 | [tableau_aliot.py](tableau_aliot.py) | Itération 3 : envoie le geste et l'état de la porte aux 2 objets ALIOT (`rasp_door` et `porte_magique`) |
+| [tester_tout.py](tester_tout.py) | Teste tout : environnement, MediaPipe, gestes, caméra, Arduino (avec le servo), objets ALIOT |
 | [iteration2.py](iteration2.py) | Itération 2 : tableau de bord ALIOT |
 | [log.py](log.py) | Itération 2 : version simplifiée pour ALIOT |
 | [config.ini](config.ini) | Identifiants des objets ALIOT |
@@ -28,6 +29,7 @@ Raspberry Pi (ou un PC) la contrôle par le port série (9600 bauds).
 | Buzzer | **4** |
 | LED rouge | **6** (+ résistance 220 Ω) |
 | LED verte | **7** (+ résistance 220 Ω) |
+| Servomoteur SG90 (ouvre la porte) | signal **9**, rouge au 5V, marron au GND |
 | Bouton poussoir (ON / OFF) | **10** (l'autre patte au GND) |
 | Écran LCD 16x2 I2C | SDA **A4**, SCL **A5** |
 | Caméra | Port CSI du Raspberry Pi, ou webcam USB |
@@ -36,7 +38,7 @@ Raspberry Pi (ou un PC) la contrôle par le port série (9600 bauds).
 
 | Geste | Action sur la porte |
 |---|---|
-| Main ouverte (5 doigts) | Ouvre la porte : LED verte, LCD « Porte ouverte », mélodie |
+| Main ouverte (5 doigts) | Ouvre la porte : servo de 155° (fermée) à 60° (ouverte), LED verte, LCD « Porte ouverte », mélodie |
 | Poing fermé | Ferme la porte |
 | 1 doigt (index) | Allume la LED rouge |
 | 2 doigts | Allume la LED verte |
@@ -45,6 +47,10 @@ Raspberry Pi (ou un PC) la contrôle par le port série (9600 bauds).
 | Pouce levé | Active le système |
 | Pouce baissé | Désactive le système |
 | Deux mains ouvertes | Mode fête : les LED clignotent à tour de rôle, avec une mélodie |
+
+**Accès refusé** : si la porte est verrouillée (système OFF, avec 👎 ou le bouton),
+la main ouverte ne l'ouvre pas. Le servo reste à 155° (fermée), l'écran affiche « Acces refuse »,
+la LED rouge clignote et le buzzer joue la mélodie de refus.
 
 Fonctionnement :
 
@@ -89,6 +95,18 @@ Le port de l'Arduino est détecté automatiquement. Pour l'imposer :
 
 **Avant de lancer** : fermer le Moniteur série d'Arduino IDE (sinon le port est
 occupé) et toute autre application qui utilise la caméra.
+
+## Tester tout le projet
+
+Fermer d'abord la porte et le Moniteur série, puis :
+
+```powershell
+& ".\porte magique\venv\Scripts\python.exe" "porte magique\tester_tout.py"
+```
+
+Les tests : environnement, MediaPipe, les 9 gestes, la validation des gestes,
+la caméra, chaque commande de l'Arduino (avec la réponse réelle de la carte) et la
+connexion des 2 objets ALIOT à leur projet. Avec `--logiciel`, seulement les tests sans matériel.
 
 ## Limites observées (tests en conditions réelles)
 

@@ -233,13 +233,21 @@ if verifier("Arduino", "Connexion série", attendre(porte_utils.est_connecte, 8)
     porte_utils.ouvrir("Test")
     verifier("Arduino", "Ouvrir la porte (main ouverte)",
              attendre(lambda: porte_utils.get_etat() == "OUVERTE" and porte_utils.get_led_verte()))
-    verifier("Arduino", "Angle de la porte à 90°", porte_utils.get_angle() == 90, f"{porte_utils.get_angle()}°")
+    verifier("Arduino", "Servo (broche 9) : la porte s'ouvre (60°)",
+             attendre(lambda: porte_utils.get_angle() == 60, 5), f"{porte_utils.get_angle()}°")
     porte_utils.fermer()
     verifier("Arduino", "Fermer la porte (poing)",
              attendre(lambda: porte_utils.get_etat() != "OUVERTE" and porte_utils.get_led_rouge()))
 
+    # Main ouverte alors que la porte est verrouillée (système OFF) : accès refusé
     porte_utils.set_systeme(False)
     attendre(lambda: not porte_utils.get_actif())
+    g.action_ouvrir()
+    verifier("Arduino", "Porte verrouillée + main ouverte : accès refusé",
+             porte_utils.get_lcd() == ("Acces refuse", "Porte verrouill.") and porte_utils.get_etat() != "OUVERTE",
+             f"LCD {porte_utils.get_lcd()}")
+    verifier("Arduino", "Accès refusé : la porte reste fermée (servo à 155°)",
+             attendre(lambda: porte_utils.get_angle() == 155, 3), f"{porte_utils.get_angle()}°")
 
 # ---------------------------------------------------------------------------
 titre("7. Objets ALIOT (projets ALIVEcode)")

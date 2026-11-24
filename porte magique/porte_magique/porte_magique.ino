@@ -7,7 +7,7 @@
  *               LED:..., BUZZER:..., BUZZ:..., MSG:...
  *
  * Broches (montage réel) : TRIG 3, ECHO 2, buzzer 4, LED rouge 6,
- *                          LED verte 7, bouton 10, LCD I2C SDA A4 / SCL A5
+ *                          LED verte 7, servo 9, bouton 10, LCD I2C SDA A4 / SCL A5
  *
  * Matériel :
  *   1. Afficheur LCD I2C 16x2   -> messages (« Bienvenue Massyle », « Acces refuse »...)
@@ -16,6 +16,7 @@
  *   4. Buzzer                   -> mélodie d'ouverture, son de refus, alarme
  *   5. Capteur ultrason HC-SR04 -> détecte une personne devant la porte
  *   6. Bouton poussoir          -> active / désactive le système
+ *   7. Servomoteur SG90         -> ouvre la porte lentement (155° fermée -> 60° ouverte)
  *
  * Communication série (9600 bauds) avec le PC (iteration2.py) :
  *   Arduino -> PC : STATUS:actif=1,etat=VEILLE,presence=0,distance=120,angle=0,ledR=0,ledV=0
@@ -25,9 +26,10 @@
  *                   BUZZER:ON/OFF, LED:ROUGE:ON/OFF, LED:VERTE:ON/OFF,
  *                   LED:OFF, LED:AUTO
  *
- * Bibliothèque : LiquidCrystal I2C (Frank de Brabander)
+ * Bibliothèques : Servo (incluse), LiquidCrystal I2C (Frank de Brabander)
  */
 
+#include <Servo.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
@@ -38,12 +40,14 @@ const uint8_t PIN_ECHO      = 2;
 const uint8_t PIN_BUZZER    = 4;
 const uint8_t PIN_LED_ROUGE = 6;
 const uint8_t PIN_LED_VERTE = 7;
+const uint8_t PIN_SERVO     = 9;   // fil signal (orange/jaune) du servo
 // LCD I2C : SDA -> A4, SCL -> A5
 
 // ---------- Paramètres ----------
 const int DIST_PRESENCE_CM = 5;             // porte ouverte si un objet est sous cette distance
-const int  ANGLE_FERME  = 0;                 // porte virtuelle (pas de servo)
-const int  ANGLE_OUVERT = 90;
+const int  ANGLE_FERME  = 155;               // position du servo porte fermée
+const int  ANGLE_OUVERT = 60;                // position du servo porte ouverte (95° de rotation)
+const unsigned long PAS_SERVO_MS        = 15;    // vitesse : 1 degré toutes les 15 ms
 const unsigned long DUREE_OUVERTURE     = 5000;
 const unsigned long DUREE_REFUS         = 3000;
 const unsigned long DELAI_RETOUR_VEILLE = 10000;
@@ -57,6 +61,7 @@ const int MELODIE_REFUS[]     = {330, 220};
 
 // ---------- Objets ----------
 LiquidCrystal_I2C lcd(0x27, 16, 2);  // essayer 0x3F si l'écran reste vide
+Servo servoPorte;
 
 // ---------- État ----------
 enum Etat { VEILLE, PRESENCE, OUVERTE, REFUSEE };
@@ -70,7 +75,9 @@ bool ledVerte = false;
 bool buzzerActif = false;
 bool ledsAutomatiques = true;
 int  distanceCm = 999;
-int  angle = ANGLE_FERME;
+int  angle = ANGLE_FERME;        // angle réel du servo
+int  angleCible = ANGLE_FERME;   // angle vers lequel le servo avance
+unsigned long tServo = 0;
 int  frequenceAlarme = 0;
 String nomVisiteur = "";
 
@@ -106,6 +113,9 @@ void setup() {
   pinMode(PIN_LED_ROUGE, OUTPUT);
   pinMode(PIN_LED_VERTE, OUTPUT);
 
+  servoPorte.attach(PIN_SERVO);
+  servoPorte.write(ANGLE_FERME);   // porte fermée au démarrage
+
   lcd.init();
   lcd.backlight();
   afficher("Porte magique", "Systeme OFF");
@@ -137,6 +147,7 @@ void loop() {
   }
 
   if (systemeActif) gererEtats();
+  gererServo();
   gererLeds();
   gererMelodie();
 
@@ -176,6 +187,14 @@ void gererEtats() {
   }
 }
 
+// ---------- Servomoteur : ouverture lente, degré par degré ----------
+void gererServo() {
+  if (angle == angleCible || millis() - tServo < PAS_SERVO_MS) return;
+  tServo = millis();
+  angle += (angleCible > angle) ? 1 : -1;
+  servoPorte.write(angle);
+}
+
 void changerEtat(Etat nouveau) {
   etat = nouveau;
   tEtat = millis();
@@ -184,7 +203,7 @@ void changerEtat(Etat nouveau) {
 
 void ouvrirPorte(const String& nom) {
   nomVisiteur = nom;
-  angle = ANGLE_OUVERT;
+  angleCible = ANGLE_OUVERT;
   changerEtat(OUVERTE);
   melodie = nullptr;
   if (buzzerActif) {
@@ -197,13 +216,13 @@ void ouvrirPorte(const String& nom) {
 }
 
 void fermerPorte() {
-  angle = ANGLE_FERME;
+  angleCible = ANGLE_FERME;
   changerEtat(presence ? PRESENCE : VEILLE);
   Serial.println(F("EVT:PORTE_FERMEE"));
 }
 
 void refuserAcces() {
-  angle = ANGLE_FERME;
+  angleCible = ANGLE_FERME;
   changerEtat(REFUSEE);
   jouerMelodie(MELODIE_REFUS, 2, 300);
   Serial.println(F("EVT:ACCES_REFUSE"));
@@ -211,7 +230,7 @@ void refuserAcces() {
 
 void basculerSysteme() {
   systemeActif = !systemeActif;
-  angle = ANGLE_FERME;
+  angleCible = ANGLE_FERME;
   ledsAutomatiques = true;
   melodie = nullptr;
   noTone(PIN_BUZZER);
