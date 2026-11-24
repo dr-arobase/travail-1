@@ -20,6 +20,11 @@ Raspberry Pi (ou un PC) la contrôle par le port série (9600 bauds).
 | [log.py](log.py) | Itération 2 : version simplifiée pour ALIOT |
 | [config.ini](config.ini) | Identifiants des objets ALIOT |
 | [requirements.txt](requirements.txt) | Librairies Python à installer |
+| [demarrer.ps1](demarrer.ps1) / [demarrer.bat](demarrer.bat) | Activent l'environnement et lancent la porte (double-clic sur le .bat) |
+| `venv/` | Environnement Python (MediaPipe, OpenCV, pyserial, aliot) |
+| [video et photos/](video%20et%20photos/) | Vidéo de démonstration et photos du montage |
+
+Tout le projet est dans ce dossier : il suffit de le copier pour le remettre.
 
 ## Montage (broches réelles)
 
@@ -66,18 +71,26 @@ penchée, et peu importe que ce soit la main gauche ou la main droite.
 
 ## Lancer le programme
 
-**Sur le PC (Windows)**, depuis le dossier du projet :
+**Sur le PC (Windows)** : double-cliquer sur `demarrer.bat`, ou dans PowerShell,
+depuis ce dossier :
 
 ```powershell
 .\demarrer.ps1
 ```
 
-Ou à la main : activer l'environnement, qui est dans le dossier `porte magique\venv`,
-puis lancer le programme (les guillemets sont obligatoires à cause de l'espace) :
+Ou à la main : activer l'environnement `venv`, puis lancer le programme :
 
 ```powershell
-& ".\porte magique\venv\Scripts\Activate.ps1"
-python "porte magique\iteration3_gestes.py"
+.\venv\Scripts\Activate.ps1
+python iteration3_gestes.py
+```
+
+Sur un autre ordinateur, le dossier `venv` ne marche pas (il est lié à ce PC) :
+le supprimer et le recréer avec Python 3.12 :
+
+```powershell
+py -3.12 -m venv venv
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
 **Sur le Raspberry Pi** :
@@ -98,10 +111,10 @@ occupé) et toute autre application qui utilise la caméra.
 
 ## Tester tout le projet
 
-Fermer d'abord la porte et le Moniteur série, puis :
+Fermer d'abord la porte et le Moniteur série, puis, depuis ce dossier :
 
 ```powershell
-& ".\porte magique\venv\Scripts\python.exe" "porte magique\tester_tout.py"
+.\venv\Scripts\python.exe tester_tout.py
 ```
 
 Les tests : environnement, MediaPipe, les 9 gestes, la validation des gestes,

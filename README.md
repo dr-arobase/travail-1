@@ -2,17 +2,18 @@
 
 ```
 travail 1 )/
-├── porte magique/          ← LE PROJET (code actuel, itérations 2 et 3)
+├── porte magique/          ← LE PROJET À REMETTRE (tout est dedans)
 │   ├── porte_magique/porte_magique.ino   code Arduino
 │   ├── iteration3_gestes.py              itération 3 : gestes MediaPipe
+│   ├── tableau_aliot.py                  tableaux de bord ALIOT
 │   ├── iteration2.py, log.py, config.ini itération 2 : ALIOT
 │   ├── porte_utils.py                    communication série avec l'Arduino
 │   ├── quickHand.py                      librairie de détection des mains
-│   └── venv/                             environnement Python (MediaPipe, OpenCV, pyserial, aliot)
-├── remises/                ← ce qui a été remis au prof
-│   ├── iteration 1/
-│   ├── iteration 2/
-│   └── iteration 3/        (mettre ici la vidéo et les photos)
+│   ├── tester_tout.py                    tests de tout le projet
+│   ├── demarrer.bat / demarrer.ps1       lancer la porte
+│   ├── video et photos/                  vidéo de démonstration et photos
+│   └── venv/                             environnement Python
+├── remises/                ← ce qui a été remis aux itérations 1 et 2
 ├── exercices mediapipe/    ← exercices du cours (quickHand, exercices 1 à 7)
 └── archives travail 1/     ← anciennes versions et idées (modèles 3D, liste d'achats)
 ```

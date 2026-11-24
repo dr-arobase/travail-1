@@ -11,7 +11,7 @@ Vérifie, dans l'ordre :
     7. les deux objets ALIOT : connexion, écriture et relecture dans leur projet
 
 Utilisation (fermer d'abord la porte et le Moniteur série, ils occupent le port) :
-    & ".\\porte magique\\venv\\Scripts\\python.exe" "porte magique\\tester_tout.py"
+    .\\venv\\Scripts\\python.exe tester_tout.py      (depuis le dossier « porte magique »)
 Sans matériel, pendant que la porte tourne (tests 1 à 4 seulement) : ajouter --logiciel
 """
 
